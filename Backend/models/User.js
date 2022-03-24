@@ -15,6 +15,11 @@ const UserSchema = new mongoose.Schema({
         max:30,
         unique:true,
     },
+    active: {
+        type: String,
+        enum: ['active', 'inactive'],
+        default: 'inactive'
+    },
     password: {
         type:String,
         required:true,

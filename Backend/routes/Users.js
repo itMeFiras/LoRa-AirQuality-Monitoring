@@ -2,8 +2,25 @@ const router = require("express").Router();
 const User = require("../models/User");
 const bcrypt = require('bcrypt');
 const jwt = require ("jsonwebtoken");
+var nodemailer = require('nodemailer');
+var email = require("../routes/email");
 require('dotenv').config();
 
+// confirmation
+router.get("/confirmation/:id",async (req,res)=>{
+    const id = req.params.id
+    User.findById(id).then((user)=>{
+        user.active = 'active'
+        user.save().then(()=>{
+            res.send({message: 'activated'})
+        }).catch((err)=>{
+            res.send({message: err.message})
+        })
+    }).catch((err)=>{
+        res.send({message: err.message})
+    })
+
+})
 
 //register
 router.post("/register",async (req,res)=>{
@@ -20,9 +37,34 @@ router.post("/register",async (req,res)=>{
             password:hashedpassword,
         })
 
+        //send mail
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.sendMail,
+              pass: process.env.sendpass
+            }
+        });
+        var url = `http://localhost:8800/api/users/confirmation/${newUser._id}`
+        var mailverif = {
+            from: process.env.sendMail,
+            to: req.body.email,
+            subject: 'Sending Email using Node.js',
+            text: `please confirm: ${url}`
+        };
+          
+        transporter.sendMail(mailverif, function(error, info){
+            if (error) {
+              console.log(error);
+            } else {
+              console.log('Email sent: ' + info.response);
+            }
+        });
+        
+
         //save and send response
         const user = await newUser.save();
-        res.status(200).json(user._id);
+        res.status(200).json({user_id : user._id, url: url});
 
     }catch(err){
         res.status(500).json(err)
