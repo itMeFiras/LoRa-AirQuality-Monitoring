@@ -20,6 +20,11 @@ const UserSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'inactive'
     },
+    node: {
+        type: String,
+        enum: ['yes', 'no'],
+        default: 'no'
+    },
     password: {
         type:String,
         required:true,

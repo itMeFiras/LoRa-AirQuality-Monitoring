@@ -1,11 +1,11 @@
 const router = require("express").Router();
 const User = require("../models/User");
+const MID = require("./middleware ");
 const bcrypt = require('bcrypt');
-const jwt = require ("jsonwebtoken");
 var nodemailer = require('nodemailer');
 require('dotenv').config();
 
-//confirmation
+//confirmation/activate user
 router.get("/confirmation/:id",async (req,res)=>{
     const id = req.params.id
     User.findById(id).then((user)=>{
@@ -20,21 +20,9 @@ router.get("/confirmation/:id",async (req,res)=>{
     })
 })
 
-//random password
-function randompass(length) {
-    var result           = '';
-    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-   }
-   return result;
-}
-
 //register
 router.post("/register",async (req,res)=>{
     try{
-
         //generate password
         const salt = await bcrypt.genSalt(10);
         const hashedpassword = await bcrypt.hash(req.body.password,salt)
@@ -83,7 +71,6 @@ router.post("/register",async (req,res)=>{
 //login
 router.post("/login",async (req,res)=>{
     try{
-
         //find user
         const user = await User.findOne({username:req.body.username});
         if (!user) return res.status(400).json("wrong user/pass")
@@ -96,8 +83,9 @@ router.post("/login",async (req,res)=>{
 
         //check active
         if(user.active == "active"){
+
         //jwt authenticate
-        const accessToken = jwt.sign(user.username, process.env.Access_ts);
+        const accessToken = MID.generateAccessToken(user);
 
         //send res
         return res.status(200).json({_id:user._id, username:user.username, accessToken: accessToken});
@@ -187,7 +175,7 @@ router.post("/resetpass",async (req,res)=>{
         if (!user) return res.status(400).json("wrong informations")
 
         //set new password
-        var newpass = randompass(6);
+        var newpass = MID.randompass(6);
         const salt = await bcrypt.genSalt(10);
         const hashedpassword = await bcrypt.hash(newpass,salt)
         user.password = hashedpassword;
@@ -225,21 +213,47 @@ router.post("/resetpass",async (req,res)=>{
 });
 
 //get user list
-router.get("/list",async (req,res)=>{
-    User.find(function(err, todos) {
+router.get("/list", MID.authenticateToken, async (req,res)=>{
+    User.find(function(err, users) {
         if (err) {
             return res.status(500).json(err);
         } else {
-            return res.json(todos);
+            return res.json(users);
         }
     });
-    /*try{
-        const user = await User.findall();
-        return res.status(200).json(user);
-    }catch(err){
-        return res.status(500).json(err)   
-    }*/
 });
 
+//get user by id
+router.get("/list/:id",async (req,res)=>{
+    let id = req.params.id;
+    User.findById(id, function(err, oneuser) {
+        res.json(oneuser);
+    });
+});
+
+//sherch user
+router.get("/search",async (req,res)=>{
+    const user = await User.findOne({username:req.body.username});
+    if (!user) return res.status(400).json("there is no user by this name")
+
+    res.status(200).json(user)
+});
+
+//filter user
+router.get("/filter", (req,res)=>{
+    User.find(function(err, users) {
+        if (err) {
+            return res.status(500).json(err);
+        } else if (req.body.ok == "1"){
+            return res.json(users.filter(e => e.active == "active"));
+        } else if (req.body.ok == "2"){
+            return res.json(users.filter(e => e.active == "inactive"));
+        } else if (req.body.ok == "3"){
+            return res.json(users.filter(e => e.node == "yes"));
+        } else if (req.body.ok == "4"){
+            return res.json(users.filter(e => e.node == "no"));
+        }
+    });
+})
 
 module.exports = router
