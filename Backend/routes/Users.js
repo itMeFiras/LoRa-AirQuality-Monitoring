@@ -223,6 +223,17 @@ router.get("/list", MID.authenticateToken, async (req,res)=>{
     });
 });
 
+//get user list
+router.get("/list2", async (req,res)=>{
+    User.find(function(err, users) {
+        if (err) {
+            return res.status(500).json(err);
+        } else {
+            return res.json(users);
+        }
+    });
+});
+
 //get user by id
 router.get("/list/:id",async (req,res)=>{
     let id = req.params.id;
