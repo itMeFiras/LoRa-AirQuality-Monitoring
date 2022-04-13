@@ -30,16 +30,18 @@ router.post("/register",async (req,res)=>{
         //create user 
         const newUser = new User({
             username:req.body.username,
+            firstname:req.body.firstname,
+            lastname:req.body.lastname,
             email:req.body.email,
             password:hashedpassword,
         })
 
-        //send mail
+        //mail information
         var transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-              user: process.env.sendMail,
-              pass: process.env.sendpass
+            user: process.env.sendMail,
+            pass: process.env.sendpass
             }
         });
 
@@ -48,20 +50,30 @@ router.post("/register",async (req,res)=>{
             from: process.env.sendMail,
             to: req.body.email,
             subject: 'account activation',
-            text: `please confirm: ${url}`
+            html: `<div style="margin: 100px;" >
+            <h4>Hello ${req.body.username},</h4>
+            <h4>Thank you for joining <b style="color: #ff7900;">LoRa-AirQuality-Monitoring</b></h4>
+            <h4>We’d like to confirm that your account was created successfully.</h4>
+            <h4>Click the link below to confirm your e-mail.</h4>
+            <h4>${url}</h4>
+            <h4>The <b style="color: #ff7900;">Orange team</b>
+            </div>`
         };
-          
-        transporter.sendMail(mailverif, function(error, info){
-            if (error) {
-              console.log(error);
-            } else {
-              console.log('Email sent: ' + info.response);
-            }
-        });
 
         //save and send response
         const user = await newUser.save();
-        res.status(200).json({user_id : user._id, url: url});
+        res.status(200).json({user_id : user._id, url: url});    
+
+        //send mail
+        if (res.status(200)){              
+            transporter.sendMail(mailverif, function(error, info){
+                if (error) {
+                console.log(error);
+                } else {
+                console.log('Email sent: ' + info.response);
+                }
+            });
+        }
 
     }catch(err){
         res.status(500).json(err)

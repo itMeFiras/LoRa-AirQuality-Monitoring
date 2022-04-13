@@ -7,14 +7,13 @@ const userRoute = require("./routes/users")
 const pinRoute = require("./routes/Pins")
 const nodeRoute = require("./routes/node")
 
-
-
 dotenv.config();
 app.use(express.json());
+const PORT = 8800 || process.env.PORT;
 
 mongoose.connect(process.env.mongoURL)
 .then(()=>{
-    console.log("mongoDB connected xD");
+    console.log(`mongoDB connected on port ${PORT} xD`);
 })
 .catch((err)=> console.log(err)); 
 
@@ -27,6 +26,6 @@ app.use("/api/users", userRoute);
 app.use("/api/node", nodeRoute);
 
 
-app.listen(8800 || process.env.PORT,()=>{
+app.listen(PORT,()=>{
     console.log("backend is running xD")
 })

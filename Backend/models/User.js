@@ -9,10 +9,22 @@ const UserSchema = new mongoose.Schema({
         max:20,
         unique:true,
     },
+    firstname: {
+        required:true,
+        type:String,
+        min:3,
+        max:20,
+    },
+    lastname: {
+        required:true,
+        type:String,
+        min:3,
+        max:20,
+    },
     email: {
         type:String,
         required:true,
-        max:30,
+        max:50,
         unique:true,
     },
     active: {
